@@ -25,9 +25,15 @@ print(df['marital'].value_counts()['married']/len(df) * 100)
 
 # TASK: Using pandas .apply() method, create a new column called "marital code". This column will only contained a shortened code of the possible marital status first letter. (For example "m" for "married" , "s" for "single" etc... See if you can do this with a lambda expression. Lots of ways to do this one!
 
+# Solution 1
 def get_first_letter(word: str):
     return word[0]
 df['marital code'] = df['marital'].apply(get_first_letter)
+print(df)
+
+# Solution 2
+df['marital code'] = df['marital'].apply(lambda status: status[0])
+df.head()
 print(df)
 
 # TASK: What was the longest lasting duration?
