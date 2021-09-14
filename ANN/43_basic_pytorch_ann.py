@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
 class Model(nn.Module):
 
@@ -11,7 +13,7 @@ class Model(nn.Module):
         # Input layer (4 features) --> h1 N --> h2 N --> output (3 classes)
         self.fc1 = nn.Linear(in_features, h1)
         self.fc2 = nn.Linear(h1, h2)
-        self.out = nn.Linear(2, out_features)
+        self.out = nn.Linear(h2, out_features)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
@@ -22,3 +24,71 @@ class Model(nn.Module):
 torch.manual_seed(32)
 
 model = Model()
+
+df = pd.read_csv('../Data/iris.csv')
+print(df.head())
+print(df.tail())
+
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10,7))
+fig.tight_layout()
+
+plots = [(0, 1), (2, 3), (0, 2), (1, 3)]
+colors = ['b', 'r', 'g']
+labels = ['Iris setosa', 'Iris virginica', 'Iris versicolor']
+
+for i, ax in enumerate(axes.flat):
+    for j in range(3):
+        x = df.columns[plots[i][0]]
+        y = df.columns[plots[i][1]]
+        ax.scatter(df[df['target']==j][x], df[df['target']==j][y], color=colors[j])
+        ax.set(xlabel=x, ylabel=y)
+
+fig.legend(labels=labels, loc=3, bbox_to_anchor=(1.0, 0.85))
+plt.show()
+
+X = df.drop('target', axis=1)
+y = df['target']
+print(X)
+print(type(y))
+
+X = X.values
+y = y.values
+print(X)
+print(y)
+
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,random_state=33)
+
+X_train = torch.FloatTensor(X_train)
+X_test = torch.FloatTensor(X_test)
+# y_train = F.one_hot(torch.LongTensor(y_train))  # not needed with Cross Entropy Loss
+# y_test = F.one_hot(torch.LongTensor(y_test))
+y_train = torch.LongTensor(y_train)
+y_test = torch.LongTensor(y_test)
+
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+epochs = 100
+losses = []
+
+for i in range(epochs):
+    # forward and get a prediction
+    y_pred =  model.forward(X_train)
+
+    # calculate Loss/error
+    loss = criterion(y_pred, y_train)
+    losses.append(loss.detach().numpy())
+
+    if i % 10 == 0:
+        print(f'Epoch {i} and loss is: {loss}')
+
+    # BACKPROPERGATION
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+
+plt.plot(range(epochs), losses)
+plt.ylabel('LOSS')
+plt.xlabel('Epoch')
+plt.show()
